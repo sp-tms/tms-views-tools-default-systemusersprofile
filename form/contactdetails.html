@@ -1,0 +1,33 @@
+<div class="row">
+    <div class="col">
+        {{adminltetags.useTag('contacts',
+            [
+                'component'                                   : component,
+                'componentName'                               : componentName,
+                'componentId'                                 : componentId,
+                'sectionId'                                   : sectionId,
+                'contactFieldType'                            : 'single',
+                'includeName'                                 : true,
+                'firstNameFieldRequired'                      : true,
+                'lastNameFieldRequired'                       : true,
+                'includeEmail'                                : true,
+                'emailFieldDisabled'                          : true,
+                'emailFieldBazPostOnCreate'                   : false,
+                'includeOther'                                : true,
+                'includeNotes'                                : true,
+                'contacts'                                    : profile['contact'],
+                'firstNameFieldBazPostOnCreate'               : true,
+                'lastNameFieldBazPostOnCreate'                : true,
+                'emailFieldBazPostOnCreate'                   : true,
+                'secondaryEmailFieldBazPostOnCreate'          : true,
+                'ccEmailsToSecondaryEmailFieldBazPostOnCreate': true,
+                'contactPhoneFieldBazPostOnCreate'            : true,
+                'contactPhoneExtFieldBazPostOnCreate'         : true,
+                'contactMobileFieldBazPostOnCreate'           : true,
+                'contactFaxFieldBazPostOnCreate'              : true,
+                'contactOtherFieldBazPostOnCreate'            : true,
+                'contactNotesFieldBazPostOnCreate'            : true
+            ]
+        )}}
+    </div>
+</div>

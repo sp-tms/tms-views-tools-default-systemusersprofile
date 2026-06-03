@@ -1,0 +1,648 @@
+<div class="row vdivide">
+    <div class="col-md-2">
+        {{adminltetags.useTag('fields',
+            [
+                'component'                                 : component,
+                'componentName'                             : componentName,
+                'componentId'                               : componentId,
+                'sectionId'                                 : sectionId,
+                'fieldId'                                   : 'form-fields',
+                'fieldLabel'                                : 'Form Fields',
+                'fieldType'                                 : 'jstree',
+                'fieldHelp'                                 : true,
+                'fieldHelpTooltipContent'                   : 'Form Fields',
+                'fieldRequired'                             : false,
+                'fieldBazScan'                              : true,
+                'fieldJstreeSearch'                         : true,
+                'fieldBazPostOnCreate'                      : false,
+                'fieldBazPostOnUpdate'                      : false,
+                'fieldJstreeDataSrcArr'                     : [],
+                'fieldJstreeAdd'                            : false,
+                'fieldJstreeEdit'                           : false,
+                'fieldJstreeExpand'                         : true,
+                'fieldJstreeCollapse'                       : true,
+                'fieldJstreeFirstOpen'                      : true,
+                'fieldJstreeAllOpen'                        : false,
+                'fieldJstreeToggleAllChildren'              : false,
+                'fieldJstreeIncludeRootInPath'              : false,
+                'fieldJstreeSelectEndNodeOnly'              : false,
+                'fieldJstreeShowDots'                       : false,
+                'fieldJstreeDoubleClickToggle'              : true,
+                'fieldJstreeMultiple'                       : false,
+                'fieldJstreeSearchCaseSensitive'            : false,
+                'fieldJstreeSearchShowOnlyMatches'          : false,
+                'fieldJstreeSearchShowOnlyMatchesChildren'  : false,
+                'fieldJstreeHideJstreeIcons'                : false
+            ]
+        )}}
+    </div>
+    {% set sessionsTabHidden = true %}
+    {% for middleware in middlewares %}
+        {% if middleware['name'] == 'AgentCheck' and middleware['enabled'] == true %}
+            {% set sessionsTabHidden = false %}
+        {% endif %}
+    {% endfor %}
+    {% set apisTabHidden = true %}
+    {% if passwordApis is defined and passwordApis|length > 0 %}
+        {% for api in passwordApis %}
+            {% if api['client_keys_generation_allowed'] == true %}
+                {% set apisTabHidden = false %}
+                {% set passwordApis = json_encode(passwordApis, 16) %}
+                {% break %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% set passwordApis = json_encode([], 16) %}
+    {% endif %}
+    {% if apisTabHidden === true %}
+        {% set passwordApis = json_encode([], 16) %}
+    {% endif %}
+    <div class="col-md-10">
+        <form data-validateon="section" id="{{componentId}}-{{sectionId}}-form">
+            <fieldset id="{{componentId}}-{{sectionId}}-fieldset">
+                {{adminltetags.useTag('tabs',
+                    [
+                        'component'                     : component,
+                        'componentName'                 : componentName,
+                        'componentId'                   : componentId,
+                        'sectionId'                     : 'main',
+                        'tabsId'                        : 'tabs',
+                        'tabsStyle'                     : 'card-outline-tabs',
+                        'tabsData'                      :
+                            [
+                                'info'   :
+                                [
+                                    'tabTitle'          : 'Info',
+                                    'tabInclude'        : 'profile/form/info',
+                                    'tabIncludeParams'  : ['profile' : profile, 'account' : account]
+                                ],
+                                'contactdetails'   :
+                                [
+                                    'tabTitle'          : 'Contact Details',
+                                    'tabInclude'        : 'profile/form/contactdetails',
+                                    'tabIncludeParams'  : ['profile' : profile, 'account' : account]
+                                ],
+                                'addresses'   :
+                                [
+                                    'tabTitle'          : 'Addresses',
+                                    'tabInclude'        : 'profile/form/addresses',
+                                    'tabIncludeParams'  : ['profile' : profile, 'account' : account]
+                                ],
+                                'security'   :
+                                [
+                                    'tabTitle'          : 'Security',
+                                    'tabInclude'        : 'profile/form/security',
+                                    'tabIncludeParams'  : ['profile' : profile, 'account' : account]
+                                ],
+                                'sessions'   :
+                                [
+                                    'tabTitle'          : 'Sessions',
+                                    'tabInclude'        : 'profile/form/sessions',
+                                    'tabIncludeParams'  : ['profile' : profile, 'account' : account],
+                                    'tabHidden'         : sessionsTabHidden
+                                ],
+                                'api'   :
+                                [
+                                    'tabTitle'          : 'API',
+                                    'tabInclude'        : 'profile/form/api',
+                                    'tabIncludeParams'  : ['profile' : profile, 'account' : account],
+                                    'tabHidden'         : apisTabHidden
+                                ],
+                                'notifications'   :
+                                [
+                                    'tabTitle'          : 'Notifications',
+                                    'tabInclude'        : 'profile/form/notifications'
+                                ]
+                            ]
+                    ]
+                )}}
+            </fieldset>
+        </form>
+    </div>
+</div>
+<script>
+/* globals BazContentFieldsValidator paginatedPNotify autoComplete fixGrid Inputmask Swal */
+var dataCollectionComponent, dataCollectionSection, dataCollectionSectionForm;
+
+if (!window['dataCollection']['{{componentId}}']) {
+    dataCollectionComponent =
+        window['dataCollection']['{{componentId}}'] = { };
+} else {
+    dataCollectionComponent =
+        window['dataCollection']['{{componentId}}'];
+}
+if (!dataCollectionComponent['{{componentId}}-{{sectionId}}']) {
+    dataCollectionSection =
+        dataCollectionComponent['{{componentId}}-{{sectionId}}'] = { };
+} else {
+    dataCollectionSection =
+        dataCollectionComponent['{{componentId}}-{{sectionId}}'];
+}
+if (!dataCollectionSection['{{componentId}}-{{sectionId}}-form']) {
+    dataCollectionSectionForm =
+        dataCollectionSection['{{componentId}}-{{sectionId}}-form'] = { };
+} else {
+    dataCollectionSectionForm =
+        dataCollectionSection['{{componentId}}-{{sectionId}}-form'];
+}
+
+var passwordApis = JSON.parse('{{passwordApis}}');
+if (Object.keys(passwordApis).length > 0) {
+    dataCollectionSection = $.extend(dataCollectionSection, getPasswordApiFields());
+}
+
+function getPasswordApiFields() {
+    var passwordApiFields = { };
+    for (var passwordApi in passwordApis) {
+        passwordApiFields['{{componentId}}-{{sectionId}}-api_client_id_' + passwordApis[passwordApi]['id']] = { };
+        passwordApiFields['{{componentId}}-{{sectionId}}-api_client_secret_' + passwordApis[passwordApi]['id']] = { };
+        passwordApiFields['{{componentId}}-{{sectionId}}-api_client_id_' + passwordApis[passwordApi]['id']]['passwordApi'] = passwordApis[passwordApi];
+        passwordApiFields['{{componentId}}-{{sectionId}}-api_client_id_' + passwordApis[passwordApi]['id']]['afterInit'] =
+            function(dataCollection, options) {
+                $('#{{componentId}}-{{sectionId}}-generate-api-client-keys-' + options['passwordApi']['id'] +
+                  ', #{{componentId}}-{{sectionId}}-regenerate-api-client-keys-' + options['passwordApi']['id']).click(function(e) {
+                    e.preventDefault();
+
+                    $(this).attr('disabled', true);
+                    $(this).children('i').attr('hidden', false);
+
+                    if (this.id === '{{componentId}}-{{sectionId}}-regenerate-api-client-keys-' + options['passwordApi']['id']) {
+                        Swal.fire({
+                            title                       : '<span class="text-danger">Regenerate API Client Keys for ' + options['passwordApi']['name'] + '?</span>',
+                            icon                        : 'question',
+                            width                       : '100%',
+                            background                  : 'rgba(0,0,0,.8)',
+                            backdrop                    : 'rgba(0,0,0,.6)',
+                            buttonsStyling              : false,
+                            confirmButtonText           : 'Yes',
+                            customClass                 : {
+                                'confirmButton'             : 'btn btn-danger text-uppercase',
+                                'cancelButton'              : 'ml-2 btn btn-secondary text-uppercase',
+                                'inputLabel'                : 'text-white',
+                                'input'                     : 'text-white'
+                            },
+                            showCancelButton            : true,
+                            keydownListenerCapture      : true,
+                            allowOutsideClick           : false,
+                            allowEscapeKey              : false,
+                            didOpen                     : function() {
+                                window.dataCollection.env.sounds.swalSound.play();
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed === true &&
+                                result.value !== ''
+                            ) {
+                                generateClientKey(options['passwordApi'], true);
+                            }
+                        });
+                    } else {
+                        generateClientKey(options['passwordApi']);
+                    }
+                });
+
+                function generateClientKey(passwordApi, forceRegen = false) {
+                    var postData = { };
+                    postData[$('#security-token').attr('name')] = $('#security-token').val();
+                    postData['api_id'] = passwordApi['id'];
+                    if (forceRegen) {
+                        postData['forceRegen'] = 'true';
+                    }
+
+                    $.post('{{links.url("system/api/server/clients/generateclientkeys")}}', postData, function(response) {
+                        if (response.responseCode == 0) {
+                            paginatedPNotify('success', response.responseMessage);
+
+                            if (response.responseData && response.responseData.client_id && response.responseData.client_secret) {
+                                $('#{{componentId}}-{{sectionId}}-api_client_id_' + passwordApi['id']).val(response.responseData.client_id);
+                                $('#{{componentId}}-{{sectionId}}-api_client_secret_' + passwordApi['id']).val(response.responseData.client_secret);
+                                $('#{{componentId}}-{{sectionId}}-api_client_secret_' + passwordApi['id']).attr('type', 'text');
+                            }
+                            $('#{{componentId}}-{{sectionId}}-api_client_id_' + passwordApi['id'] +
+                              ', #{{componentId}}-{{sectionId}}-api_client_secret_' + passwordApi['id']).parents('.form-group').removeClass('d-none');
+                            $('#{{componentId}}-{{sectionId}}-generate-api-client-keys-' + passwordApi['id']).attr('hidden', true);
+                            $('#{{componentId}}-{{sectionId}}-regenerate-api-client-keys-' + passwordApi['id']).attr('hidden', false);
+                        } else {
+                            paginatedPNotify('error', response.responseMessage);
+                        }
+
+                        if (response.tokenKey && response.token) {
+                            $("#security-token").attr("name", response.tokenKey);
+                            $("#security-token").val(response.token);
+                        }
+
+                        $('#{{componentId}}-{{sectionId}}-generate-api-client-keys-' + passwordApi['id'] +
+                          ', #{{componentId}}-{{sectionId}}-regenerate-api-client-keys-' + passwordApi['id']).attr('disabled', false);
+                        $('#{{componentId}}-{{sectionId}}-generate-api-client-keys-' + passwordApi['id'] +
+                          ', #{{componentId}}-{{sectionId}}-regenerate-api-client-keys-' + passwordApi['id']).children('i').attr('hidden', true);
+                    }, 'json');
+                }
+            };
+    }
+
+    return passwordApiFields;
+}
+
+var subscriptions = JSON.parse('{{subscriptions}}');
+var gridColumns = [];
+gridColumns.push(
+    {
+        header          :   '<p class="text-center mb-0">' +
+                                '<span class="cursor-pointer">' +
+                                    '<i id="{{componentId}}-{{sectionId}}-subscriptions-packages-unsubscribeall" ' +
+                                        'data-toggle="tooltip" data-html="true" data-placement="bottom" '+
+                                        'data-original-title="Unsubscribe All" class="fas fa-fw fa-times-circle ' +
+                                        'mr-1 text-danger helper packages">' +
+                                    '</i>' +
+                                '</span>' +
+                                    ' MODULES ' +
+                                '<span class="cursor-pointer">' +
+                                    '<i id="{{componentId}}-{{sectionId}}-subscriptions-packages-subscribeall" ' +
+                                        'data-toggle="tooltip" data-html="true" data-placement="bottom" '+
+                                        'data-original-title="Subscribe All" class="fas fa-fw fa-check-circle ' +
+                                        'ml-1 text-success helper packages">' +
+                                    '</i>' +
+                                '</span>' +
+                            '</p>',
+        wideCellClass   : 'text-center packages',
+        title           : "_DATA_",
+        width           : 300
+    }
+);
+
+for (var subscription in subscriptions) {
+    gridColumns.push(
+        {
+            header          :   '<p class="text-center mb-0">' +
+                                    '<span class="cursor-pointer">' +
+                                        '<i id="{{componentId}}-{{sectionId}}-subscriptions-' + subscriptions[subscription] + '-unsubscribeall" ' +
+                                            'data-toggle="tooltip" data-html="true" data-placement="bottom" '+
+                                            'data-original-title="Unsubscribe all ' + subscriptions[subscription] + '" class="fas fa-fw fa-times-circle ' +
+                                            'mr-1 text-danger helper ' + subscriptions[subscription] + '">' +
+                                        '</i>' +
+                                    '</span> ' +
+                                        subscriptions[subscription].toUpperCase() +
+                                    ' <span class="cursor-pointer">' +
+                                        '<i id="{{componentId}}-{{sectionId}}-subscriptions-' + subscriptions[subscription] + '-subscribeall" ' +
+                                            'data-toggle="tooltip" data-html="true" data-placement="bottom" '+
+                                            'data-original-title="Subscribe all ' + subscriptions[subscription] + '" class="fas fa-fw fa-check-circle ' +
+                                            'ml-1 text-success helper ' + subscriptions[subscription] + '">' +
+                                        '</i>' +
+                                    '</span>' +
+                                '</p>',
+            wideCellClass   : 'text-center NOTIFICATION-' + subscriptions[subscription],
+            cellClass       : 'empty NOTIFICATION-' + subscriptions[subscription]
+        }
+    );
+}
+
+dataCollectionSection =
+    $.extend(dataCollectionSection, {
+        '{{componentId}}-{{sectionId}}-id'                              : { },
+        '{{componentId}}-{{sectionId}}-account_id'                      : { },
+        '{{componentId}}-{{sectionId}}-account_email'                   : { },
+        '{{componentId}}-{{sectionId}}-account_role'                    : { },
+        '{{componentId}}-{{sectionId}}-account_username'                : { },
+        '{{componentId}}-{{sectionId}}-contact_phone'                   : {
+            afterInit: function() {
+                Inputmask({mask:"9{1,3}-9{1,3}-9{1,10}", greedy: false})
+                    .mask(document.getElementById('{{componentId}}-{{sectionId}}-contact_phone'));
+            }
+        },
+        '{{componentId}}-{{sectionId}}-contact_phone_ext'               : { },
+        '{{componentId}}-{{sectionId}}-contact_fax'                     : {
+            afterInit: function() {
+                Inputmask({mask:"9{1,3}-9{1,3}-9{1,10}", greedy: false})
+                    .mask(document.getElementById('{{componentId}}-{{sectionId}}-contact_fax'));
+            }
+        },
+        '{{componentId}}-{{sectionId}}-contact_mobile'                  : {
+            afterInit: function() {
+                Inputmask({mask:"9{1,3}-9{1,3}-9{1,10}", greedy: false})
+                    .mask(document.getElementById('{{componentId}}-{{sectionId}}-contact_mobile'));
+            }
+        },
+        '{{componentId}}-{{sectionId}}-current_password'                : {
+            afterInit: function() {
+                $('#{{componentId}}-{{sectionId}}-twofa_otp-switch_to_email').click(function() {
+                    $('#{{componentId}}-{{sectionId}}-twofa_otp').val('');
+                    $('#twofa-otp').attr('hidden', true);
+                    $('#twofa-email').attr('hidden', false);
+                });
+                $('#{{componentId}}-{{sectionId}}-twofa_email-switch_to_otp').click(function() {
+                    $('#{{componentId}}-{{sectionId}}-twofa_email').val('');
+                    $('#twofa-otp').attr('hidden', false);
+                    $('#twofa-email').attr('hidden', true);
+                });
+            }
+        },
+        '{{componentId}}-{{sectionId}}-new_password'                    : { },
+        '{{componentId}}-{{sectionId}}-strength-meter'                  : { },
+        '{{componentId}}-{{sectionId}}-confirm_password'                : { },
+        '{{componentId}}-{{sectionId}}-twofa_otp'                       : { },
+        '{{componentId}}-{{sectionId}}-twofa_email'                     : { },
+        '{{componentId}}-{{sectionId}}-subscriptions'                   :
+        $.extend(dataCollectionSection['{{componentId}}-{{sectionId}}-subscriptions'], {
+            plugins: [
+                        "search",
+                        "types",
+                        "dnd",
+                        "grid"
+            ],
+            grid: {
+                columns: gridColumns,
+                resizable   : true
+            },
+            afterInit : function(dataCollection) {
+                //Fix Grid Width
+                function fixGrid() {
+                    var gridCount = $('.jstree-grid-column').length - 1;
+                    var gridWidth = $('.jstree-grid-wrapper').width();
+                    var colWidth = (gridWidth - 300) / gridCount;
+
+                    $('.jstree-grid-column').each(function(index,grid) {
+                        if (index !== 0) {
+                            $(grid).css({
+                                width: colWidth
+                            });
+                        }
+                    });
+                }
+
+                $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+                    if (e.target.hash === '#{{componentId}}-{{sectionId}}-tabs-notifications') {
+                        fixGrid();
+                    }
+                });
+
+                $('#{{componentId}}-{{sectionId}}-form-fields').on('select_node.jstree', function(e, data) {
+                    if (data.node.li_attr["data-tabid"] === '{{componentId}}-{{sectionId}}-tabs-notifications') {
+                        fixGrid();
+                    }
+                });
+
+                var allIds, gridData, notifications, parents, children, jstreeId;
+
+                allIds =
+                    $(dataCollection['{{componentId}}']['{{componentId}}-{{sectionId}}']['{{componentId}}-{{sectionId}}-subscriptions']['jstree'])
+                        .jstree(true).get_json('#', {flat: true});
+
+                // Make a data object
+                if (!dataCollection['{{componentId}}']['{{componentId}}-{{sectionId}}']['{{componentId}}-{{sectionId}}-subscriptions']['data']) {
+                    dataCollection['{{componentId}}']['{{componentId}}-{{sectionId}}']['{{componentId}}-{{sectionId}}-subscriptions']['data'] = { };
+                }
+
+                gridData = dataCollection['{{componentId}}']['{{componentId}}-{{sectionId}}']['{{componentId}}-{{sectionId}}-subscriptions']['data'];
+
+                notifications = JSON.parse('{{notifications}}');//Parse DB Data
+
+                for (var app in notifications) {
+                    for (var moduleType in notifications[app]) {
+                        for (var pkg in notifications[app][moduleType]) {
+                            jstreeId =
+                                $($('#{{componentId}}-{{sectionId}}-subscriptions ul.jstree-children')
+                                    .find('[data-id="' + app + '"]'))
+                                .find('[data-id="' + pkg + '"]');
+
+                            if (jstreeId.length > 0) {
+                                gridData[jstreeId[0].id] = { };
+                                gridData[jstreeId[0].id]['app_id'] = app;
+                                gridData[jstreeId[0].id]['module_type'] = moduleType;
+                                gridData[jstreeId[0].id]['module_id'] = pkg;
+                                gridData[jstreeId[0].id]['subscriptions'] = notifications[app][moduleType][pkg];
+                            }
+                        }
+                    }
+                }
+
+                $.each(allIds, function(index, obj) {
+                    if (gridData[obj.id]) {
+                        var jstreeIdStructure =
+                            $(dataCollection['{{componentId}}']['{{componentId}}-{{sectionId}}']['{{componentId}}-{{sectionId}}-subscriptions']['jstree'])
+                                .jstree(true).get_json(obj.id, {flat: true})
+                    }
+                });
+
+                //Build Permissions grid
+                function buildPermissionsGrid(gridData) {
+                    for (var jstreeGridId in gridData) {
+                        $('.jstree-grid-wrapper')
+                            .find('[data-jstreegrid="' + jstreeGridId + '"]')
+                            .each(function(index, column) {
+                                var permission, spanClass, spanData;
+                                var spanClasses = $(this).children('span').attr("class").split(/\s+/);
+                                $(spanClasses).each(function(index, sclass) {
+                                    if (sclass.search(/NOTIFICATION-.*/) === 0) {
+                                        permission = sclass.replace('NOTIFICATION-', '');
+                                        spanClass = permission + ' ';
+                                    }
+                                });
+
+                                if (gridData[jstreeGridId]['subscriptions'][permission] == '0') {
+                                    spanClass += 'text-danger cursor-pointer';
+                                    spanData = '<i class="fa fa-fw fa-times-circle"></i>';
+                                    $(this).children('span').removeClass('empty');
+                                } else if (gridData[jstreeGridId]['subscriptions'][permission] == '1') {
+                                    spanClass += 'text-success cursor-pointer';
+                                    spanData = '<i class="fa fa-fw fa-check-circle"></i>';
+                                    $(this).children('span').removeClass('empty');
+                                } else {
+                                    spanClass = 'na';
+                                    spanData = '<p class="text-secondary">-</p>';
+                                }
+                                $(this).children('span').addClass(spanClass).html(spanData);
+                            }
+                        );
+                    }
+                    extractData();
+                }
+                buildPermissionsGrid(gridData);
+
+                //Search
+                $(dataCollection['{{componentId}}']['{{componentId}}-{{sectionId}}']['{{componentId}}-{{sectionId}}-subscriptions']['jstree'])
+                    .on('search.jstree after_open.jstree after_close.jstree close_all.jstree open_all.jstree', function(e, data) {
+                        var notHidden = $('#{{componentId}}-{{sectionId}}-subscriptions').find('.jstree-node').not('.jstree-hidden');
+
+                        $('#{{componentId}}-{{sectionId}}-subscriptions-tree-search-input').keyup(function() {
+                            if ($('#{{componentId}}-{{sectionId}}-subscriptions-tree-search-input').val() === '') {
+                                $('#{{componentId}}-{{sectionId}}-subscriptions .bg-info').removeClass('bg-info');
+                                $('.jstree-grid-wrapper .bg-info').removeClass('bg-info');
+                                buildPermissionsGrid(gridData);
+                            } else {
+                                $('#{{componentId}}-{{sectionId}}-subscriptions .bg-info').removeClass('bg-info');
+                                $('.jstree-grid-wrapper .bg-info').removeClass('bg-info');
+                                $('.jstree-search').addClass('bg-info');
+                            }
+                        });
+
+                        buildPermissionsGrid(gridData);
+                });
+
+                function findSiblings(id) {
+                    return $('.jstree-grid-wrapper').find('[data-jstreegrid="' + id + '"]');
+                }
+
+                //Click Toggle
+                $(dataCollection['{{componentId}}']['{{componentId}}-{{sectionId}}']['{{componentId}}-{{sectionId}}-subscriptions']['jstree'])
+                    .on('select_cell.jstree-grid', function(e, data) {
+                        toggleGridCell($(data.grid)[0].id, $(data.node)[0].id, false, null);
+                    }
+                );
+
+                function toggleGridCell(dataGridId, dataNodeId, bulk, bulkState) {
+                    // Only run on columns that have data and are not empty or na (N/A)
+                    if (!$('#' + dataGridId).children('span').hasClass('empty') && !$('#' + dataGridId).children('span').hasClass('na')) {
+                        // We only need this to store data at the moment. If the array is going to be named array like view => 0, then we dont need this.
+                        var subscription, spanClass, spanData;
+                        var spanClasses = $('#' + dataGridId).children('span').attr("class").split(/\s+/);
+                        $(spanClasses).each(function(index, sclass) {
+                            if (sclass.search(/NOTIFICATION-.*/) === 0) {
+                                subscription = sclass.replace('NOTIFICATION-', '');
+                                spanClass = subscription + ' ';
+                            }
+                        });
+
+                        if (bulkState !== null) {
+                            if ($('#' + dataGridId).children('span').hasClass('text-danger') && bulkState === true) {
+                                // myState = 'deny';
+                                $('#' + dataGridId).children('span').removeClass('text-danger').addClass('text-success');
+                                $('#' + dataGridId).children('span').html('<i class="fas fa-fw fa-check-circle"></i>');
+                                gridData[dataNodeId]['subscriptions'][subscription] = 1;
+                            } else if ($('#' + dataGridId).children('span').hasClass('text-success') && bulkState === false) {
+                                // myState = 'permit'
+                                $('#' + dataGridId).children('span').removeClass('text-success').addClass('text-danger');
+                                $('#' + dataGridId).children('span').html('<i class="fas fa-fw fa-times-circle"></i>');
+                                gridData[dataNodeId]['subscriptions'][subscription] = 0;
+                            }
+                        } else {
+                            if ($('#' + dataGridId).children('span').hasClass('text-danger')) {
+                                // myState = 'deny';
+                                $('#' + dataGridId).children('span').removeClass('text-danger').addClass('text-success');
+                                $('#' + dataGridId).children('span').html('<i class="fas fa-fw fa-check-circle"></i>');
+                                gridData[dataNodeId]['subscriptions'][subscription] = 1;
+                            } else if ($('#' + dataGridId).children('span').hasClass('text-success')) {
+                                // myState = 'permit'
+                                $('#' + dataGridId).children('span').removeClass('text-success').addClass('text-danger');
+                                $('#' + dataGridId).children('span').html('<i class="fas fa-fw fa-times-circle"></i>');
+                                gridData[dataNodeId]['subscriptions'][subscription] = 0;
+                            }
+                        }
+                    }
+                    extractData();
+                }
+
+                (function registerBulkButtons() {
+                    // Bulk deny/permit (All)
+                    $('#{{componentId}}-{{sectionId}}-subscriptions-packages-unsubscribeall').click(function(e) {
+                        e.preventDefault();
+                        denyPermitAll(null, null, false, null);
+                    });
+                    $('#{{componentId}}-{{sectionId}}-subscriptions-packages-subscribeall').click(function(e) {
+                        e.preventDefault();
+                        denyPermitAll(null, null, true, null);
+                    });
+
+                    for (var subscriptionAll in subscriptions) {
+                        $('#{{componentId}}-{{sectionId}}-subscriptions-' + subscriptions[subscriptionAll] + '-unsubscribeall').click(function(e) {
+                            e.preventDefault();
+
+                            if ($(this)[0].id === '{{componentId}}-{{sectionId}}-subscriptions-view-unsubscribeall') {
+                                denyPermitAll(null, null, false, true);
+                            } else {
+                                denyPermitAll(this, false, null, null);
+                            }
+                        });
+                        $('#{{componentId}}-{{sectionId}}-subscriptions-' + subscriptions[subscriptionAll] + '-subscribeall').click(function(e) {
+                            e.preventDefault();
+                            if ($(this)[0].id === '{{componentId}}-{{sectionId}}-subscriptions-view-subscribeall') {
+                                denyPermitAll(this, true, null, true);
+                            } else {
+                                denyPermitAll(this, true, null, null);
+                            }
+                        });
+                    }
+                })();
+
+                // Function to make bulk changes
+                function denyPermitAll(denyPermitPermissionIconId, permit, pkg, view) {
+                    if (denyPermitPermissionIconId) {
+                        var colNum, column;
+                        column = $(denyPermitPermissionIconId).parents('div').next('div')[0].id.split('col');
+                        colNum = column[1] - 1;
+                    }
+                    // Deny All in that Column
+                    $.each(allIds, function(index, child) {
+                        if (denyPermitPermissionIconId) {
+                            toggleGridCell(
+                                $('.jstree-grid-wrapper')
+                                .find('[data-jstreegrid="' + child.id + '"]')[colNum].id, child.id, true, permit
+                            );
+                        } else {
+                            $('.jstree-grid-wrapper').find('[data-jstreegrid="' + child.id + '"]')
+                                .children('span')
+                                .each(function(index,span) {
+                                    if (!$(span).hasClass('empty') && !$(span).hasClass('na')) {
+                                        var subscription, spanClass, spanData;
+                                        var spanClasses = $(span).attr("class").split(/\s+/);
+                                        $(spanClasses).each(function(index, sclass) {
+                                            if (sclass.search(/NOTIFICATION-.*/) === 0) {
+                                                subscription = sclass.replace('NOTIFICATION-', '');
+                                                spanClass = subscription + ' ';
+                                            }
+                                            if (pkg) {
+                                                $(span).removeClass('text-danger').addClass('text-success');
+                                                $(span).html('<i class="fas fa-fw fa-check-circle"></i>');
+                                                gridData[child.id]['subscriptions'][subscription] = 1;
+                                            } else {
+                                                $(span).removeClass('text-success').addClass('text-danger');
+                                                $(span).html('<i class="fas fa-fw fa-times-circle"></i>');
+                                                gridData[child.id]['subscriptions'][subscription] = 0;
+                                            }
+                                        });
+                                    }
+                            });
+                        }
+                    });
+
+                    extractData();
+                }
+
+                //Extract data to post;
+                function extractData() {
+                    // Make a data object
+                    if (!dataCollectionSectionForm['data']) {
+                        dataCollectionSectionForm['data'] = { };
+                    }
+                    if (!dataCollectionSection['data']['subscriptions']) {
+                        dataCollectionSection['data']['subscriptions'] = { };
+                    }
+                    var data = dataCollectionSection['data']['subscriptions'];
+
+                    for (var app in notifications) {
+                        data[app] = { };
+                    }
+
+                    for (var nodeId in gridData) {
+                        if (!data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']]) {
+                            data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']] = { };
+                        }
+
+                        data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']][gridData[nodeId]['module_id']] =
+                            gridData[nodeId]['subscriptions'];
+                    }
+                }
+            }
+        }),
+        '{{componentId}}-{{sectionId}}-form'                            : {
+            ignore      : ':submit, :reset, :image, :disabled, .ignore, .cr-slider',
+            rules       : {
+                '{{componentId}}-{{sectionId}}-first_name'                  : 'required',
+                '{{componentId}}-{{sectionId}}-last_name'                   : 'required'
+            },
+            messages    : {
+                '{{componentId}}-{{sectionId}}-first_name'                  : 'Please enter first name',
+                '{{componentId}}-{{sectionId}}-last_name'                   : 'Please enter last name'
+            }
+        }
+    });
+
+</script>
