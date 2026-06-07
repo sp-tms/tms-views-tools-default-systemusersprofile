@@ -396,20 +396,17 @@ dataCollectionSection =
                 notifications = JSON.parse('{{notifications}}');//Parse DB Data
 
                 for (var app in notifications) {
-                    for (var moduleType in notifications[app]) {
-                        for (var pkg in notifications[app][moduleType]) {
-                            jstreeId =
-                                $($('#{{componentId}}-{{sectionId}}-subscriptions ul.jstree-children')
-                                    .find('[data-id="' + app + '"]'))
-                                .find('[data-id="' + pkg + '"]');
+                    for (var pkg in notifications[app]) {
+                        jstreeId =
+                            $($('#{{componentId}}-{{sectionId}}-subscriptions ul.jstree-children')
+                                .find('[data-id="' + app + '"]'))
+                            .find('[data-id="' + pkg + '"]');
 
-                            if (jstreeId.length > 0) {
-                                gridData[jstreeId[0].id] = { };
-                                gridData[jstreeId[0].id]['app_id'] = app;
-                                gridData[jstreeId[0].id]['module_type'] = moduleType;
-                                gridData[jstreeId[0].id]['module_id'] = pkg;
-                                gridData[jstreeId[0].id]['subscriptions'] = notifications[app][moduleType][pkg];
-                            }
+                        if (jstreeId.length > 0) {
+                            gridData[jstreeId[0].id] = { };
+                            gridData[jstreeId[0].id]['app_id'] = app;
+                            gridData[jstreeId[0].id]['module_id'] = pkg;
+                            gridData[jstreeId[0].id]['subscriptions'] = notifications[app][pkg];
                         }
                     }
                 }
@@ -622,11 +619,7 @@ dataCollectionSection =
                     }
 
                     for (var nodeId in gridData) {
-                        if (!data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']]) {
-                            data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']] = { };
-                        }
-
-                        data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']][gridData[nodeId]['module_id']] =
+                        data[gridData[nodeId]['app_id']][gridData[nodeId]['module_id']] =
                             gridData[nodeId]['subscriptions'];
                     }
                 }
