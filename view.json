@@ -1,77 +1,77 @@
 {
-    "name" : "SystemUsersProfile",
-    "display_name" : "Tms Users Profile View",
-    "description" : "<p>Tms Users Profile View</p>",
-    "module_type" : "views",
-    "app_type" : "tms",
-    "category" : "tools",
-    "version" : "0.2.0",
-    "repo" : "https://github.com/sp-tms/tms-views-tools-default-systemusersprofile",
-    "dependencies" :
-    {
-        "core" :
-        {
-            "name" : "Core",
-            "version" : "0.0.0-rc.15",
-            "repo" : "https://github.com/sp-framework/core"
-        },
-        "apptype" :
-        {
-            "name" : "Transport Management System",
-            "version" : "0.0.0",
-            "repo" : "https://github.com/sp-tms/tms"
-        },
-        "packages" : [],
-        "views" :
-        [
-            {
-                "name" : "Default",
-                "version" : "0.0.0",
-                "repo" : "https://github.com/sp-tms/tms-views-tools-default"
-            }
-        ]
-    },
-    "is_subview" : true,
-    "settings" : 
-    {
-        "head" : 
-        {
-            "link" : 
-            {
-                "href" : 
-                {
-                    "assets" : 
-                    {
-                        "dev" : [],
-                        "prod" : []
-                    }
-                }
-            },
-            "script" : 
-            {
-                "src" : 
-                {
-                    "assets" : 
-                    {
-                        "dev" : [],
-                        "prod" : []
-                    }
-                }
-            }
-        },
-        "footer" : 
-        {
-            "script" : 
-            {
-                "src" : 
-                {
-                    "assets" : 
-                    {
-                        "dev" : [],
-                        "prod" : []
-                    }
-                }
-            }
-        }
-    }
+	"name" : "SystemUsersProfile",
+	"display_name" : "Tms Users Profile View",
+	"description" : "<p>Tms Users Profile View</p>",
+	"module_type" : "views",
+	"app_type" : "tms",
+	"category" : "tools",
+	"version" : "0.3.0",
+	"repo" : "https://github.com/sp-tms/tms-views-tools-default-systemusersprofile",
+	"dependencies" : 
+	{
+		"core" : 
+		{
+			"name" : "Core",
+			"version" : "0.0.0-rc.15",
+			"repo" : "https://github.com/sp-framework/core"
+		},
+		"apptype" : 
+		{
+			"name" : "Transport Management System",
+			"version" : "0.0.0",
+			"repo" : "https://github.com/sp-tms/tms"
+		},
+		"packages" : [],
+		"views" : 
+		[
+			{
+				"name" : "Default",
+				"version" : "0.0.0",
+				"repo" : "https://github.com/sp-tms/tms-views-tools-default"
+			}
+		]
+	},
+	"is_subview" : true,
+	"settings" : 
+	{
+		"head" : 
+		{
+			"link" : 
+			{
+				"href" : 
+				{
+					"assets" : 
+					{
+						"dev" : [],
+						"prod" : []
+					}
+				}
+			},
+			"script" : 
+			{
+				"src" : 
+				{
+					"assets" : 
+					{
+						"dev" : [],
+						"prod" : []
+					}
+				}
+			}
+		},
+		"footer" : 
+		{
+			"script" : 
+			{
+				"src" : 
+				{
+					"assets" : 
+					{
+						"dev" : [],
+						"prod" : []
+					}
+				}
+			}
+		}
+	}
 }
