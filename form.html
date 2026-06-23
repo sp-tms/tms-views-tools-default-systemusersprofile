@@ -82,6 +82,12 @@
                                     'tabInclude'        : 'profile/form/contactdetails',
                                     'tabIncludeParams'  : ['profile' : profile, 'account' : account]
                                 ],
+                                'locale'   :
+                                [
+                                    'tabTitle'          : 'Locale',
+                                    'tabInclude'        : 'profile/form/locale',
+                                    'tabIncludeParams'  : ['profile' : profile, 'account' : account]
+                                ],
                                 'addresses'   :
                                 [
                                     'tabTitle'          : 'Addresses',
@@ -112,6 +118,11 @@
                                 [
                                     'tabTitle'          : 'Notifications',
                                     'tabInclude'        : 'profile/form/notifications'
+                                ],
+                                'env'   :
+                                [
+                                    'tabTitle'          : 'Env',
+                                    'tabInclude'        : 'profile/form/env'
                                 ]
                             ]
                     ]
@@ -321,6 +332,12 @@ dataCollectionSection =
                     .mask(document.getElementById('{{componentId}}-{{sectionId}}-contact_mobile'));
             }
         },
+        '{{componentId}}-{{sectionId}}-locale_country_iso3'             : {
+            placeholder : 'SELECT COUNTRY'
+        },
+        '{{componentId}}-{{sectionId}}-locale_timezone'                 : {
+            placeholder : 'SELECT TIMEZONE'
+        },
         '{{componentId}}-{{sectionId}}-current_password'                : {
             afterInit: function() {
                 $('#{{componentId}}-{{sectionId}}-twofa_otp-switch_to_email').click(function() {
@@ -396,17 +413,20 @@ dataCollectionSection =
                 notifications = JSON.parse('{{notifications}}');//Parse DB Data
 
                 for (var app in notifications) {
-                    for (var pkg in notifications[app]) {
-                        jstreeId =
-                            $($('#{{componentId}}-{{sectionId}}-subscriptions ul.jstree-children')
-                                .find('[data-id="' + app + '"]'))
-                            .find('[data-id="' + pkg + '"]');
+                    for (var moduleType in notifications[app]) {
+                        for (var pkg in notifications[app][moduleType]) {
+                            jstreeId =
+                                $($('#{{componentId}}-{{sectionId}}-subscriptions ul.jstree-children')
+                                    .find('[data-id="' + app + '"]'))
+                                .find('[data-id="' + pkg + '"]');
 
-                        if (jstreeId.length > 0) {
-                            gridData[jstreeId[0].id] = { };
-                            gridData[jstreeId[0].id]['app_id'] = app;
-                            gridData[jstreeId[0].id]['module_id'] = pkg;
-                            gridData[jstreeId[0].id]['subscriptions'] = notifications[app][pkg];
+                            if (jstreeId.length > 0) {
+                                gridData[jstreeId[0].id] = { };
+                                gridData[jstreeId[0].id]['app_id'] = app;
+                                gridData[jstreeId[0].id]['module_type'] = moduleType;
+                                gridData[jstreeId[0].id]['module_id'] = pkg;
+                                gridData[jstreeId[0].id]['subscriptions'] = notifications[app][moduleType][pkg];
+                            }
                         }
                     }
                 }
@@ -542,7 +562,7 @@ dataCollectionSection =
                         $('#{{componentId}}-{{sectionId}}-subscriptions-' + subscriptions[subscriptionAll] + '-unsubscribeall').click(function(e) {
                             e.preventDefault();
 
-                            if ($(this)[0].id === '{{componentId}}-{{sectionId}}-subscriptions-view-unsubscribeall') {
+                            if ($(this)[0].id === '{{componentId}}-{{sectionId}}-subscriptions-' + subscriptions[subscriptionAll] + '-unsubscribeall') {
                                 denyPermitAll(null, null, false, true);
                             } else {
                                 denyPermitAll(this, false, null, null);
@@ -550,7 +570,7 @@ dataCollectionSection =
                         });
                         $('#{{componentId}}-{{sectionId}}-subscriptions-' + subscriptions[subscriptionAll] + '-subscribeall').click(function(e) {
                             e.preventDefault();
-                            if ($(this)[0].id === '{{componentId}}-{{sectionId}}-subscriptions-view-subscribeall') {
+                            if ($(this)[0].id === '{{componentId}}-{{sectionId}}-subscriptions-' + subscriptions[subscriptionAll] + '-subscribeall') {
                                 denyPermitAll(this, true, null, true);
                             } else {
                                 denyPermitAll(this, true, null, null);
@@ -619,7 +639,11 @@ dataCollectionSection =
                     }
 
                     for (var nodeId in gridData) {
-                        data[gridData[nodeId]['app_id']][gridData[nodeId]['module_id']] =
+                        if (!data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']]) {
+                            data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']] = { };
+                        }
+
+                        data[gridData[nodeId]['app_id']][gridData[nodeId]['module_type']][gridData[nodeId]['module_id']] =
                             gridData[nodeId]['subscriptions'];
                     }
                 }
